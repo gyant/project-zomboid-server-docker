@@ -12,21 +12,14 @@ ENV STEAMAPPDIR "${HOMEDIR}/${STEAMAPP}-dedicated"
 # Install required packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends --no-install-suggests \
-      dos2unix \
+      dos2unix net-tools \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Download the Project Zomboid dedicated server app using the steamcmd app
-# Set the entry point file permissions
-RUN set -x \
-  && mkdir -p "${STEAMAPPDIR}" \
-  && chown -R "${USER}:${USER}" "${STEAMAPPDIR}" \
-  && bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
-                                    +login anonymous \
-                                    +app_update "${STEAMAPPID}" validate \
-                                    +quit
+RUN mkdir -p "${STEAMAPPDIR}"
+RUN chown -R "${USER}:${USER}" "${STEAMAPPDIR}"
 
-# Copy the entry point file
+# # Copy the entry point file
 COPY --chown=${USER}:${USER} scripts/entry.sh /server/scripts/entry.sh
 RUN chmod 550 /server/scripts/entry.sh
 
@@ -36,6 +29,12 @@ RUN chmod 550 /server/scripts/search_folder.sh
 
 # Create required folders to keep their permissions on mount
 RUN mkdir -p "${HOMEDIR}/Zomboid"
+
+USER $USER
+RUN bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
+                                    +login anonymous \
+                                    +app_update "${STEAMAPPID}" validate \
+                                    +quit
 
 WORKDIR ${HOMEDIR}
 # Expose ports
